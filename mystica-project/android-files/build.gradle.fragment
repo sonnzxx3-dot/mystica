@@ -1,0 +1,55 @@
+// ============================================================
+//  ФРАГМЕНТ для android/app/build.gradle
+//  Добавь блоки signingConfigs и обнови buildTypes внутри android { }
+//
+//  ВАЖНО: пароли держи в android/key.properties (НЕ коммить в git!)
+// ============================================================
+
+// 1) Создай файл android/key.properties со своими данными:
+//    storePassword=ТВОЙ_ПАРОЛЬ
+//    keyPassword=ТВОЙ_ПАРОЛЬ
+//    keyAlias=mystica
+//    storeFile=../../mystica-release.keystore
+
+// 2) В начало android/app/build.gradle (до android { }) добавь:
+def keystorePropertiesFile = rootProject.file("key.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+// 3) Внутри android { } добавь signingConfigs и обнови buildTypes:
+android {
+    // ... существующие настройки (compileSdk, defaultConfig и т.д.) ...
+
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    defaultConfig {
+        // applicationId уже будет "ru.mystica.app" из capacitor.config
+        // ВАЖНО: versionCode увеличивай на 1 при каждой загрузке в Play!
+        versionCode 1
+        versionName "1.0.0"
+        minSdkVersion 23   // Android 6.0+ (нужно для биллинга)
+        targetSdkVersion 35  // Android 15 — требование Google для новых приложений
+    }
+}
+
+// Также убедись, что вверху файла android { compileSdk 35 } (или compileSdkVersion 35)
